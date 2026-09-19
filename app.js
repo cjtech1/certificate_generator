@@ -61,6 +61,18 @@ async function init() {
   // Set up file upload handlers
   initUploader(state, renderer, fieldManager, dataManager);
 
+  // ── About / Developer Info modal ─────────────
+  const aboutOverlay = document.getElementById('about-overlay');
+  const openAbout  = () => aboutOverlay.classList.remove('hidden');
+  const closeAbout = () => aboutOverlay.classList.add('hidden');
+
+  document.getElementById('btn-about').addEventListener('click', openAbout);
+  document.getElementById('btn-about-close').addEventListener('click', closeAbout);
+  // Click outside the modal card to close
+  aboutOverlay.addEventListener('click', (e) => {
+    if (e.target === aboutOverlay) closeAbout();
+  });
+
   // ── Theme toggle ──────────────────────────────
   const themeBtn = document.getElementById('btn-theme-toggle');
   themeBtn.addEventListener('click', () => {
@@ -122,6 +134,7 @@ async function init() {
         }
         break;
       case 'Escape':
+        if (!aboutOverlay.classList.contains('hidden')) { closeAbout(); break; }
         state.selectedFieldId = null;
         fieldManager.renderList();
         fieldManager.renderProps();
