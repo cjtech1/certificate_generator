@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertGen — Bulk Certificate Generator</title>
+  <meta name="description" content="Generate bulk certificates from Excel data. Upload your Canva template, position text fields visually, and export as PDF, PNG, or JPEG in one click.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- CDN Libraries (must load before ES module) -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">CertGen</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <button class="btn btn-ghost btn-sm" id="btn-load-preset" title="Load a saved field layout (.json)">
+        📂 Load Layout
+      </button>
+      <button class="btn btn-ghost btn-sm" id="btn-save-preset" title="Save current field layout as JSON">
+        💾 Save Layout
+      </button>
+      <input type="file" id="preset-file-input" accept=".json" class="hidden">
+    </div>
+
+    <div class="header-right">
+      <span class="header-hint" id="status-hint">Upload a template to get started</span>
+      <button class="btn btn-icon" id="btn-theme-toggle" title="Toggle light/dark mode" aria-label="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN 3-PANEL LAYOUT ===== -->
+  <main class="app-layout">
+
+    <!-- ════════ LEFT PANEL: Field Tools ════════ -->
+    <aside class="panel panel-tools" id="panel-tools">
+
+      <div class="panel-header">
+        <span class="panel-step">01</span>
+        <h2>Text Fields</h2>
+        <button class="btn btn-primary btn-sm" id="btn-add-field" title="Add a new text field to the canvas">
+          + Add Field
+        </button>
+      </div>
+
+      <!-- Fields list -->
+      <div id="fields-list" class="fields-list">
+        <div class="empty-state-small">
+          <div class="empty-icon">✏️</div>
+          <p>No fields yet.</p>
+          <p>Click <strong>+ Add Field</strong> after<br>uploading a template.</p>
+        </div>
+      </div>
+
+      <!-- Field Properties (revealed when a field is selected) -->
+      <div id="field-props" class="field-props hidden">
+        <div class="field-props-header">
+          <h3 id="field-props-title">Field Settings</h3>
+          <button class="btn btn-danger btn-sm" id="btn-delete-field" title="Delete this field">🗑</button>
+        </div>
+
+        <div class="prop-group">
+          <label for="prop-label">Label</label>
+          <input type="text" id="prop-label" class="input" placeholder="e.g. Participant Name">
+        </div>
+
+        <div class="prop-group">
+          <label for="prop-column">Bind to Excel Column</label>
+          <select id="prop-column" class="input">
+            <option value="">— upload Excel first —</option>
+          </select>
+        </div>
+
+        <div class="prop-group">
+          <label for="prop-font">Font Family</label>
+          <select id="prop-font" class="input">
+            <option value="Inter">Inter</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Lora">Lora</option>
+            <option value="Dancing Script">Dancing Script</option>
+          </select>
+        </div>
+
+        <div class="prop-row">
+          <div class="prop-group">
+            <label for="prop-size">Font Size (px)</label>
+            <input type="number" id="prop-size" class="input" min="4" max="999" value="72">
+          </div>
+          <div class="prop-group">
+            <label for="prop-color">Color</label>
+            <input type="color" id="prop-color" class="input input-color" value="#1a1a1a">
+          </div>
+        </div>
+
+        <div class="prop-row">
+          <div class="prop-group">
+            <label>Style</label>
+            <div class="style-toggles">
+              <button class="btn btn-toggle" id="prop-bold" title="Bold"><strong>B</strong></button>
+              <button class="btn btn-toggle" id="prop-italic" title="Italic"><em>I</em></button>
+            </div>
+          </div>
+          <div class="prop-group">
+            <label>Alignment</label>
+            <div class="style-toggles">
+              <button class="btn btn-toggle" id="prop-align-left" data-align="left" title="Align left">⬤</button>
+              <button class="btn btn-toggle active" id="prop-align-center" data-align="center" title="Center">≡</button>
+              <button class="btn btn-toggle" id="prop-align-right" data-align="right" title="Align right">⬤</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="prop-group">
+          <label class="prop-check">
+            <input type="checkbox" id="prop-autofit" checked>
+            Auto-shrink text to fit box width
+          </label>
+        </div>
+
+        <div class="prop-group prop-position">
+          <label>Position &amp; Size <span class="label-hint">(%)</span></label>
+          <div class="prop-row">
+            <div class="prop-group">
+              <label for="prop-x">Left (X)</label>
+              <input type="number" id="prop-x" class="input" min="0" max="99" step="0.1" placeholder="0">
+            </div>
+            <div class="prop-group">
+              <label for="prop-y">Top (Y)</label>
+              <input type="number" id="prop-y" class="input" min="0" max="99" step="0.1" placeholder="0">
+            </div>
+          </div>
+          <div class="prop-row">
+            <div class="prop-group">
+              <label for="prop-w">Width</label>
+              <input type="number" id="prop-w" class="input" min="1" max="100" step="0.1" placeholder="50">
+            </div>
+            <div class="prop-group">
+              <label for="prop-h">Height</label>
+              <input type="number" id="prop-h" class="input" min="1" max="100" step="0.1" placeholder="15">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Font Upload -->
+      <div class="font-upload-section">
+        <label class="btn btn-ghost btn-sm btn-full" for="custom-font-input">
+          🔤 Upload Custom Font (.ttf / .otf)
+        </label>
+        <input type="file" id="custom-font-input" accept=".ttf,.otf,.woff,.woff2" class="hidden">
+        <div id="custom-fonts-list"></div>
+      </div>
+
+    </aside>
+
+    <!-- ════════ CENTER: Canvas Preview ════════ -->
+    <section class="panel panel-canvas" id="panel-canvas">
+
+      <!-- Template drop zone (before upload) -->
+      <div id="template-dropzone" class="dropzone dropzone-large" role="button" tabindex="0" aria-label="Upload certificate template">
+        <div class="dropzone-content">
+          <div class="dropzone-icon">🖼️</div>
+          <h3>Upload Certificate Template</h3>
+          <p>Drag &amp; drop a PNG or JPEG exported from Canva</p>
+          <label class="btn btn-primary" for="template-file-input">Browse File</label>
+          <input type="file" id="template-file-input" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden">
+          <p class="dropzone-hint">Supports PNG · JPEG · WebP</p>
+        </div>
+      </div>
+
+      <!-- Canvas (revealed after template load) -->
+      <div id="canvas-container" class="canvas-container hidden">
+        <canvas id="cert-canvas" title="Click to select • Drag to move • Handles to resize"></canvas>
+      </div>
+
+      <!-- Participant Navigation Bar -->
+      <div id="participant-nav" class="participant-nav hidden">
+        <button class="btn btn-ghost btn-sm" id="btn-prev" title="Previous participant">‹ Prev</button>
+        <span id="nav-label" class="nav-label">No data loaded</span>
+        <button class="btn btn-ghost btn-sm" id="btn-next" title="Next participant">Next ›</button>
+        <div class="nav-divider"></div>
+        <button class="btn btn-secondary btn-sm" id="btn-preview-dl" title="Download current preview as PNG">⬇ Download Preview</button>
+      </div>
+
+    </section>
+
+    <!-- ════════ RIGHT PANEL: Data & Export ════════ -->
+    <aside class="panel panel-data" id="panel-data">
+
+      <!-- Step 2: Load Data -->
+      <div class="panel-section">
+        <div class="panel-header">
+          <span class="panel-step">02</span>
+          <h2>Participant Data</h2>
+        </div>
+
+        <div id="excel-dropzone" class="dropzone dropzone-small" role="button" tabindex="0" aria-label="Upload Excel file">
+          <div class="dropzone-content dropzone-content-row">
+            <span class="dropzone-icon-sm">📊</span>
+            <div>
+              <p>Drop Excel or CSV here</p>
+              <label class="btn btn-secondary btn-sm" for="excel-file-input">Browse</label>
+              <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" class="hidden">
+            </div>
+          </div>
+        </div>
+
+        <div id="data-summary" class="data-summary hidden">
+          <span class="summary-badge" id="summary-badge">✓ 0 participants</span>
+          <button class="btn btn-ghost btn-xs" id="btn-clear-data" title="Remove loaded data">✕ Clear</button>
+        </div>
+      </div>
+
+      <!-- Column → Field mapping -->
+      <div class="panel-section hidden" id="col-map-section">
+        <h3 class="section-title">Column → Field Mapping</h3>
+        <p class="section-hint">Map each text field to an Excel column</p>
+        <div id="col-map-list" class="col-map-list"></div>
+      </div>
+
+      <!-- Data preview table -->
+      <div class="panel-section">
+        <div id="data-table-wrap" class="data-table-wrap hidden"></div>
+      </div>
+
+      <!-- Step 3: Export -->
+      <div class="panel-section export-section">
+        <div class="panel-header" style="border:none;padding:0 0 10px 0">
+          <span class="panel-step">03</span>
+          <h2>Export</h2>
+        </div>
+
+        <div class="format-grid">
+          <label class="format-option">
+            <input type="radio" name="export-format" value="pdf-single" checked>
+            <span class="format-card">
+              <span class="format-icon">📄</span>
+              <span class="format-name">Single PDF</span>
+              <span class="format-desc">All in one file</span>
+            </span>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="export-format" value="pdf-zip">
+            <span class="format-card">
+              <span class="format-icon">🗂️</span>
+              <span class="format-name">PDF per cert</span>
+              <span class="format-desc">Zipped separately</span>
+            </span>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="export-format" value="png-zip">
+            <span class="format-card">
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">PNG</span>
+              <span class="format-desc">Lossless images</span>
+            </span>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="export-format" value="jpeg-zip">
+            <span class="format-card">
+              <span class="format-icon">📷</span>
+              <span class="format-name">JPEG</span>
+              <span class="format-desc">Smaller file size</span>
+            </span>
+          </label>
+        </div>
+
+        <div id="progress-wrap" class="progress-wrap hidden">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+          <span id="progress-label" class="progress-label">Generating… 0 / 0</span>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-full" id="btn-generate">
+          ✨ Generate Certificates
+        </button>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Toast notification container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ES Module entry point -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
