@@ -71,6 +71,9 @@ function _loadTemplate(file, state, renderer, fieldManager) {
     renderer.initCanvas();
     renderer.render();
 
+    // Notify mobile tab switcher to jump to canvas
+    document.dispatchEvent(new CustomEvent('cert:template-loaded'));
+
     toast(`Template loaded — ${img.naturalWidth}×${img.naturalHeight} px`, 'success');
   };
 

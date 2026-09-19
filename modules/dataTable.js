@@ -56,6 +56,9 @@ export class DataManager {
         this.fieldManager.onDataLoaded();
         this.renderer.render();
 
+        // Signal mobile tab to jump to canvas preview
+        document.dispatchEvent(new CustomEvent('cert:data-loaded'));
+
         toast(`✓ Loaded ${dataRows.length} participants (${headers.length} columns)`, 'success');
 
       } catch (err) {

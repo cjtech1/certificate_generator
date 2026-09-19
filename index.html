@@ -299,8 +299,25 @@
     </aside>
   </main>
 
+  <!-- ===== MOBILE BOTTOM TAB BAR (hidden on desktop) ===== -->
+  <nav class="mobile-tabbar" id="mobile-tabbar" role="navigation" aria-label="Section navigation">
+    <button class="mobile-tab" data-target="panel-tools" id="mtab-fields" aria-label="Fields panel">
+      <span class="mobile-tab-icon">✏️</span>
+      <span class="mobile-tab-label">Fields</span>
+    </button>
+    <button class="mobile-tab mobile-tab-center mobile-tab-active" data-target="panel-canvas" id="mtab-canvas" aria-label="Canvas panel">
+      <span class="mobile-tab-icon">🖼️</span>
+      <span class="mobile-tab-label">Canvas</span>
+    </button>
+    <button class="mobile-tab" data-target="panel-data" id="mtab-data" aria-label="Data and Export panel">
+      <span class="mobile-tab-icon">📊</span>
+      <span class="mobile-tab-label">Data & Export</span>
+    </button>
+  </nav>
+
   <!-- Toast notification container -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
 
   <!-- ===== DEVELOPER INFO MODAL ===== -->
   <div id="about-overlay" class="about-overlay hidden" role="dialog" aria-modal="true" aria-label="About CertGen">

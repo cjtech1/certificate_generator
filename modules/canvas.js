@@ -241,7 +241,32 @@ export class CanvasRenderer {
     c.addEventListener('mousemove', (e) => this._onMove(e));
     c.addEventListener('mouseup',   (e) => this._onUp(e));
     c.addEventListener('mouseleave',     () => this._onUp());
+
+    // ── Touch events (mobile) — map to mouse handlers ──
+    // { passive: false } so we can call preventDefault() and stop page scroll
+    // while the user is interacting with a field on the canvas.
+
+    c.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return; // single-finger only
+      const t = e.touches[0];
+      // Only prevent default if a field or template is present
+      // (otherwise allow normal page scroll)
+      if (this.state.template) e.preventDefault();
+      this._onDown({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => {} });
+    }, { passive: false });
+
+    c.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      if (this.state.template && (this._drag || this._resize)) e.preventDefault();
+      const t = e.touches[0];
+      this._onMove({ clientX: t.clientX, clientY: t.clientY });
+    }, { passive: false });
+
+    c.addEventListener('touchend', () => {
+      this._onUp();
+    }, { passive: true });
   }
+
 
   _onDown(e) {
     if (!this.state.template) return;

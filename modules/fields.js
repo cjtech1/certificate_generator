@@ -75,6 +75,9 @@ export class FieldManager {
     this.renderProps();
     this.renderer.render();
     this._dataManager?.renderColMap();
+
+    // Signal mobile tab to jump to canvas so user can position the new field
+    document.dispatchEvent(new CustomEvent('cert:field-added'));
   }
 
   deleteField(id) {
